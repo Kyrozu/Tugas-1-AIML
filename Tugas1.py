@@ -56,8 +56,8 @@ def init_particle():
         assigned_nurses = set()  # Perawat yang sudah ditugaskan hari ini
         assigned_nurses_klinik_umum = set()
         
-        for bangsal_idx, bangsal in enumerate(daftar_bangsal):
-            for s in range(shift):
+        for s in range(shift):
+            for bangsal_idx, bangsal in enumerate(daftar_bangsal):
                 if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
                     continue  # Lewati shift malam jika klinik tidak buka malam
                 
