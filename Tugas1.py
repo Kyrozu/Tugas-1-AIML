@@ -1,11 +1,13 @@
 import numpy as np
 import random
 import pandas as pd
+# pip install pandas
 
 # Parameter
 perawat = 200
 hari = 30
 shift = 3
+
 partikel = 40
 iterasi = 100
 
@@ -30,6 +32,7 @@ daftar_perawat = [
     for i in range(1, perawat + 1)
 ]
 
+# 
 def has_required_certification(nurse, bangsal):
     if bangsal == "Bayi Prematur" and not nurse["sertif_bayi"]:
         return False
@@ -39,6 +42,7 @@ def has_required_certification(nurse, bangsal):
         return False
     return True
 
+# 
 def init_particle():
     jadwal = np.full((perawat, hari, shift), -1)
     for day in range(hari):
@@ -68,6 +72,7 @@ def init_particle():
 
 V1, V2, V3, V4 = 50, 50, 40, 30
 
+# 
 def calculate_fitness(jadwal):
     penalty = 0
     for n in range(perawat):
@@ -89,6 +94,7 @@ def calculate_fitness(jadwal):
                     penalty += V3 * (bangsal["kapasitas"] - total_perawat)
     return penalty
 
+# 
 particles = [init_particle() for _ in range(partikel)]
 velocities = [np.zeros((perawat, hari, shift)) for _ in range(partikel)]
 pbest = particles.copy()
@@ -119,6 +125,7 @@ for iteration in range(iterasi):
         break
     prev_gbest_fitness = gbest_fitness
 
+# 
 def display_schedule(jadwal):
     data = []
     count_per_bangsal = {bangsal["nama"]: 0 for bangsal in daftar_bangsal}
