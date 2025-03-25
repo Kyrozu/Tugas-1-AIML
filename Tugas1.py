@@ -4,7 +4,7 @@ import pandas as pd
 # pip install pandas
 
 # Parameter
-perawat = 200
+perawat = 270
 hari = 30
 shift = 3
 partikel = 40
@@ -27,7 +27,7 @@ klinik_tidak_buka_malam = {"Klinik Umum", "Klinik Gigi"}
 daftar_perawat = [
     {"id": i, "nama": f"Perawat {i}", "umur": random.randint(20, 50), "lama_bekerja":random.uniform(0.0,30.0),
      "sertif_bayi": random.randint(0, 1), "sertif_ICU": random.randint(0, 1),
-     "sertif_gigi": random.randint(0, 1)}
+     "sertif_gigi": random.randint(0, 1), "day_off_left_per_minggu": 2}
     for i in range(1, perawat + 1)
 ]
 
@@ -41,19 +41,39 @@ def has_required_certification(nurse, bangsal):
         return False
     return True
 
-# membuat particle -> kandidat solution
+#buat particle
 def init_particle():
-    jadwal = np.full((perawat, hari, shift), -1)
+    jadwal = np.full((perawat, hari, shift), -1)  # Inisialisasi jadwal kosong (-1)
+    
     for day in range(hari):
-        assigned_nurses = set()
+        # Reset day off setiap tanggal 7, 14, 21, 28
+        if (day + 1) in {7, 14, 21, 28}:
+            
+            for n in daftar_perawat:
+                
+                n["day_off_left_per_minggu"] = 2
+
+        assigned_nurses = set()  # Perawat yang sudah ditugaskan hari ini
         assigned_nurses_klinik_umum = set()
         
         for bangsal_idx, bangsal in enumerate(daftar_bangsal):
             for s in range(shift):
                 if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
-                    continue
+                    continue  # Lewati shift malam jika klinik tidak buka malam
                 
-                available_nurses = [n for n in range(perawat) if n not in assigned_nurses and has_required_certification(daftar_perawat[n], bangsal["nama"])]
+                # **Prioritaskan perawat dengan day off terbanyak**
+                sorted_nurses = sorted(
+                    range(perawat), 
+                    key=lambda n: daftar_perawat[n]["day_off_left_per_minggu"], 
+                    reverse=True  # Urutan menurun (perawat dengan day off lebih banyak duluan)
+                )
+
+                # Pilih perawat yang belum ditugaskan dan memiliki sertifikasi yang sesuai
+                available_nurses = [
+                    n for n in sorted_nurses
+                    if n not in assigned_nurses and has_required_certification(daftar_perawat[n], bangsal["nama"])
+                ]
+
                 needed = bangsal["kapasitas"]
                 
                 if bangsal["nama"] == "Klinik Umum" and s == 0:
@@ -64,9 +84,16 @@ def init_particle():
                 else:
                     assigned = random.sample(available_nurses, min(len(available_nurses), needed))
                 
+                # Tetapkan perawat ke jadwal
                 for n in assigned:
                     jadwal[n, day, s] = bangsal_idx
                     assigned_nurses.add(n)
+
+        # **Kurangi day off untuk perawat yang tidak bertugas hari ini**
+        for n in range(perawat):
+            if n not in assigned_nurses:
+                daftar_perawat[n]["day_off_left_per_minggu"] -= 1
+                          
     return jadwal
 
 #penalty/violence point
@@ -167,4 +194,4 @@ def display_schedule(jadwal):
 print("Jadwal terbaik ditemukan:")
 display_df = display_schedule(gbest)
 print(display_df.to_string(index=False))
-print(pbest_fitness)
+
