@@ -156,7 +156,7 @@ for iteration in range(iterasi):
     for i in range(partikel):
         #kecepatan particle
         velocities[i] = (
-            RuntimeWarning * velocities[i] +
+            w * velocities[i] +
             c1 * random.random() * (pbest[i] - particles[i]) +
             c2 * random.random() * (gbest - particles[i])
         )
