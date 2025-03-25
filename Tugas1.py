@@ -7,7 +7,6 @@ import pandas as pd
 perawat = 200
 hari = 30
 shift = 3
-
 partikel = 40
 iterasi = 100
 
@@ -26,13 +25,13 @@ daftar_bangsal = [
 klinik_tidak_buka_malam = {"Klinik Umum", "Klinik Gigi"}
 
 daftar_perawat = [
-    {"id": i, "nama": f"Perawat {i}", "umur": random.randint(20, 50),
+    {"id": i, "nama": f"Perawat {i}", "umur": random.randint(20, 50), "lama_bekerja":random.uniform(0.0,30.0),
      "sertif_bayi": random.randint(0, 1), "sertif_ICU": random.randint(0, 1),
      "sertif_gigi": random.randint(0, 1)}
     for i in range(1, perawat + 1)
 ]
 
-# 
+#cek ada sertif atau gk
 def has_required_certification(nurse, bangsal):
     if bangsal == "Bayi Prematur" and not nurse["sertif_bayi"]:
         return False
@@ -42,7 +41,7 @@ def has_required_certification(nurse, bangsal):
         return False
     return True
 
-# 
+# membuat particle -> kandidat solution
 def init_particle():
     jadwal = np.full((perawat, hari, shift), -1)
     for day in range(hari):
@@ -70,9 +69,11 @@ def init_particle():
                     assigned_nurses.add(n)
     return jadwal
 
+#penalty/violence point
 V1, V2, V3, V4 = 50, 50, 40, 30
 
-# 
+# menghitung jumlah fitness setiap particle
+# semua awale fitnessnya sama, terus dikurangi buat setiap aturan yg dilanggar
 def calculate_fitness(jadwal):
     penalty = 0
     for n in range(perawat):
@@ -94,24 +95,40 @@ def calculate_fitness(jadwal):
                     penalty += V3 * (bangsal["kapasitas"] - total_perawat)
     return penalty
 
-# 
+# inisialisasi particle, jumlah kandidat solusi
 particles = [init_particle() for _ in range(partikel)]
+#inisialisasi kecepatan kecepatan awal partikel
 velocities = [np.zeros((perawat, hari, shift)) for _ in range(partikel)]
+#mencopy pbest particle
 pbest = particles.copy()
+#semua pbest dihitung fitnessnya
 pbest_fitness = [calculate_fitness(p) for p in pbest]
+#mengambil particle dengan nilai fitness terbaik
 gbest = particles[np.argmin(pbest_fitness)]
+#mengambil fitness terbaik
 gbest_fitness = min(pbest_fitness)
-
-w, c1, c2 = 0.5, 1.5, 1.5
+#bobot inersia (boleh diganti sesuai selera)
+#kalo bobot terlalu besar, partikelnya bergerak terus tannpa konvergen
+#kalo terlalu kecil, solusinya terjebak di solusi lokal
+#biasanya 0.4 - 0.9
+w = 0.5
+#mengontrol pengaruh pbest kalo terlalu besar, cenderung mengikuti solusi terbaik diri sendiri
+c1 = 1.5
+#mengontrol pengaruh gbest kalo terlalu besar, cenderung mengikuti solusi terbaik sebelumya
+c2 = 1.5
+#karena awal, gbest sebelumnya sama dengan gbest skrg
 prev_gbest_fitness = gbest_fitness
 
+#iterasi 
 for iteration in range(iterasi):
     for i in range(partikel):
+        #kecepatan particle
         velocities[i] = (
             0.9 * velocities[i] +
             c1 * random.random() * (pbest[i] - particles[i]) +
             c2 * random.random() * (gbest - particles[i])
         )
+        #update posisi partikel, np.clip buat mastiin tetep dalam range
         particles[i] = np.clip(particles[i] + velocities[i], -1, len(daftar_bangsal) - 1).astype(int)
         fitness = calculate_fitness(particles[i])
         if fitness < pbest_fitness[i]:
@@ -120,12 +137,14 @@ for iteration in range(iterasi):
         if fitness < gbest_fitness:
             gbest = particles[i]
             gbest_fitness = fitness
+    #cek apakah perubahan terlalu kecil
+    #1e-3 itu seperti 0.001
     if iteration > 10 and abs(prev_gbest_fitness - gbest_fitness) < 1e-3:
         print("Konvergensi tercapai pada iterasi", iteration)
         break
     prev_gbest_fitness = gbest_fitness
 
-# 
+#display jadwal
 def display_schedule(jadwal):
     data = []
     count_per_bangsal = {bangsal["nama"]: 0 for bangsal in daftar_bangsal}
@@ -139,6 +158,7 @@ def display_schedule(jadwal):
                     ])
                     count_per_bangsal[bangsal_name] += 1
     df = pd.DataFrame(data, columns=["Perawat", "Hari", "Shift", "Bangsal/Klinik"])
+    #ini bisa dihapus kalo mau, ini buat nunjukkin jumlah perawat per bangsal, jadi sisain return df saja
     print("Jumlah perawat per bangsal:")
     for bangsal, count in count_per_bangsal.items():
         print(f"{bangsal}: {count}")
@@ -147,3 +167,4 @@ def display_schedule(jadwal):
 print("Jadwal terbaik ditemukan:")
 display_df = display_schedule(gbest)
 print(display_df.to_string(index=False))
+print(pbest_fitness)
