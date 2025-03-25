@@ -96,6 +96,13 @@ def init_particle():
                           
     return jadwal
 
+#cek nurse yang paling lama bekerjanya
+def determine_shift_leader(nurses):
+    if nurses:
+        return max(nurses, key=lambda n: daftar_perawat[n]["lama_bekerja"])
+    return None
+
+
 #penalty/fitness point
 V1, V2, V3, V4 = 50, 50, 40, 30
 
@@ -180,17 +187,24 @@ for iteration in range(iterasi):
 def display_schedule(jadwal):
     data = []
     count_per_bangsal = {bangsal["nama"]: 0 for bangsal in daftar_bangsal}
-    for n in range(perawat):
-        for d in range(hari):
-            for s in range(shift):
-                if jadwal[n, d, s] >= 0:
-                    bangsal_name = daftar_bangsal[jadwal[n, d, s]]["nama"]
+    
+    for d in range(hari):
+        for s in range(shift):
+            for b_idx, bangsal in enumerate(daftar_bangsal):
+                if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
+                    continue
+                
+                nurses_in_shift = [n for n in range(perawat) if jadwal[n, d, s] == b_idx]
+                ketua_shift = determine_shift_leader(nurses_in_shift)
+                
+                for n in nurses_in_shift:
                     data.append([
-                        daftar_perawat[n]["nama"], d + 1, nama_shift[s], bangsal_name
+                        daftar_perawat[n]["nama"], d + 1, nama_shift[s], bangsal["nama"],
+                        "Ketua" if n == ketua_shift else "Anggota"
                     ])
-                    count_per_bangsal[bangsal_name] += 1
-    df = pd.DataFrame(data, columns=["Perawat", "Hari", "Shift", "Bangsal/Klinik"])
-    #ini bisa dihapus kalo mau, ini buat nunjukkin jumlah perawat per bangsal, jadi sisain return df saja
+                    count_per_bangsal[bangsal["nama"]] += 1
+    
+    df = pd.DataFrame(data, columns=["Perawat", "Hari", "Shift", "Bangsal/Klinik", "Peran"])
     print("Jumlah perawat per bangsal:")
     for bangsal, count in count_per_bangsal.items():
         print(f"{bangsal}: {count}")
