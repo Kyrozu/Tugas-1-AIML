@@ -143,7 +143,7 @@ gbest_fitness = min(pbest_fitness)
 #kalo bobot terlalu besar, partikelnya bergerak terus tannpa konvergen
 #kalo terlalu kecil, solusinya terjebak di solusi lokal
 #biasanya 0.4 - 0.9
-w = 0.5
+w = 0.9
 #mengontrol pengaruh pbest kalo terlalu besar, cenderung mengikuti solusi terbaik diri sendiri
 c1 = 1.5
 #mengontrol pengaruh gbest kalo terlalu besar, cenderung mengikuti solusi terbaik sebelumya
@@ -156,7 +156,7 @@ for iteration in range(iterasi):
     for i in range(partikel):
         #kecepatan particle
         velocities[i] = (
-            0.9 * velocities[i] +
+            RuntimeWarning * velocities[i] +
             c1 * random.random() * (pbest[i] - particles[i]) +
             c2 * random.random() * (gbest - particles[i])
         )
