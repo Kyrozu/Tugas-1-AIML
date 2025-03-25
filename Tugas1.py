@@ -46,46 +46,56 @@ def init_particle():
     jadwal = np.full((perawat, hari, shift), -1)
     for day in range(hari):
         if (day + 1) in {7, 14, 21, 28}:
+            #reset day off per minggu
             for n in daftar_perawat:
                 n["day_off_left_per_minggu"] = 2
         assigned_nurses = set()
         for s in range(shift):
             for bangsal_idx, bangsal in enumerate(daftar_bangsal):
+                # if the shift is night and klinik tidak buka malam, skip
                 if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
                     continue
+                # if the shift is sore and klinik umum, skip
                 if s == 1 and bangsal["nama"] == "Klinik Umum":
                     continue
+                #sort the nurses based on day off, the fewer the better
                 sorted_nurses = sorted(range(perawat), key=lambda n: daftar_perawat[n]["day_off_left_per_minggu"], reverse=True)
                 available_nurses = [
                     n for n in sorted_nurses if n not in assigned_nurses and has_required_certification(daftar_perawat[n], bangsal["nama"])
                 ]
+                
                 needed = bangsal["kapasitas"]
+                assigned = []
+                #seperate the junior and senior nurse from the rest
                 senior_nurses = [n for n in available_nurses if daftar_perawat[n]["lama_bekerja"] >= 20]
                 junior_nurses = [n for n in available_nurses if daftar_perawat[n]["lama_bekerja"] < 5]
-                assigned = []
-                for jn in junior_nurses:
-                    if senior_nurses:
-                        sn = senior_nurses.pop(0)
-                        assigned.append(sn)
-                    assigned.append(jn)
-                remaining_needed = needed - len(assigned)
-                if remaining_needed > 0:
-                    extra_nurses = random.sample(available_nurses, min(len(available_nurses), remaining_needed))
-                    assigned.extend(extra_nurses)
+                #assign junior and senior together so they on the same bangsal
+                while len(assigned) < needed:
+                    if senior_nurses and len(assigned) < needed:
+                        assigned.append(senior_nurses.pop(0))
+                    if junior_nurses and len(assigned) < needed:
+                        assigned.append(junior_nurses.pop(0))
+                    extra_nurses = [n for n in available_nurses if n not in assigned]
+                    #if there kapasitas left, assign the other nurse
+                    if extra_nurses and len(assigned) < needed:
+                        assigned.append(extra_nurses.pop(0))
+                
                 for n in assigned:
                     jadwal[n, day, s] = bangsal_idx
                     assigned_nurses.add(n)
                 
-                # Menjaga perawat Klinik Umum tetap di shift sore
                 if bangsal["nama"] == "Klinik Umum" and s == 0:
                     for n in assigned:
+                        #if shift sore assign klinik umum dengan nurse yg sama dengan klinik pagi
                         if jadwal[n, day, 1] == -1:
                             jadwal[n, day, 1] = bangsal_idx
                             assigned_nurses.add(n)
+        
         for n in range(perawat):
             if n not in assigned_nurses:
                 daftar_perawat[n]["day_off_left_per_minggu"] -= 1
     return jadwal
+
 
 #cek nurse yang paling lama bekerjanya
 def determine_shift_leader(nurses):
