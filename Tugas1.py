@@ -1,5 +1,5 @@
 import numpy as np
-import random
+import random as random
 import pandas as pd
 # pip install pandas
 
