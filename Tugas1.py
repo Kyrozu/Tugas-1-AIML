@@ -43,57 +43,47 @@ def has_required_certification(nurse, bangsal):
 
 #buat particle
 def init_particle():
-    jadwal = np.full((perawat, hari, shift), -1)  # Inisialisasi jadwal kosong (-1)
-    
+    jadwal = np.full((perawat, hari, shift), -1)
     for day in range(hari):
-        # Reset day off setiap tanggal 7, 14, 21, 28
         if (day + 1) in {7, 14, 21, 28}:
-            
+            # reset day off
             for n in daftar_perawat:
-                
                 n["day_off_left_per_minggu"] = 2
-
-        assigned_nurses = set()  # Perawat yang sudah ditugaskan hari ini
-        assigned_nurses_klinik_umum = set()
-        
+        assigned_nurses = set()
         for s in range(shift):
+            #ambil id bangsal 
             for bangsal_idx, bangsal in enumerate(daftar_bangsal):
                 if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
-                    continue  # Lewati shift malam jika klinik tidak buka malam
-                
-                # **Prioritaskan perawat dengan day off terbanyak**
-                sorted_nurses = sorted(
-                    range(perawat), 
-                    key=lambda n: daftar_perawat[n]["day_off_left_per_minggu"], 
-                    reverse=True  # Urutan menurun (perawat dengan day off lebih banyak duluan)
-                )
-
-                # Pilih perawat yang belum ditugaskan dan memiliki sertifikasi yang sesuai
+                    continue
+                #sort nurse berdasarkan day off, semakin kecil semakin priority
+                sorted_nurses = sorted(range(perawat), key=lambda n: daftar_perawat[n]["day_off_left_per_minggu"], reverse=True)
                 available_nurses = [
-                    n for n in sorted_nurses
-                    if n not in assigned_nurses and has_required_certification(daftar_perawat[n], bangsal["nama"])
+                    n for n in sorted_nurses if n not in assigned_nurses and has_required_certification(daftar_perawat[n], bangsal["nama"])
                 ]
-
                 needed = bangsal["kapasitas"]
-                
-                if bangsal["nama"] == "Klinik Umum" and s == 0:
-                    assigned = random.sample(available_nurses, min(len(available_nurses), needed))
-                    assigned_nurses_klinik_umum.update(assigned)
-                elif bangsal["nama"] == "Klinik Umum" and s == 1:
-                    assigned = list(assigned_nurses_klinik_umum)
-                else:
-                    assigned = random.sample(available_nurses, min(len(available_nurses), needed))
-                
-                # Tetapkan perawat ke jadwal
+                #cek perawat senior dan junior
+                senior_nurses = [n for n in available_nurses if daftar_perawat[n]["lama_bekerja"] >= 20]
+                junior_nurses = [n for n in available_nurses if daftar_perawat[n]["lama_bekerja"] < 5]
+                assigned = []
+                #untuk setiap junior
+                for jn in junior_nurses:
+                    #cek apakah sdh ada senior
+                    if senior_nurses:
+                        sn = senior_nurses.pop(0)
+                        #kalo ada, masukkan keduanya bersamaan
+                        assigned.append(sn)
+                    assigned.append(jn)
+                remaining_needed = needed - len(assigned)
+                #untuk nurse sisanya, assign sesuai kebutuhan
+                if remaining_needed > 0:
+                    extra_nurses = random.sample(available_nurses, min(len(available_nurses), remaining_needed))
+                    assigned.extend(extra_nurses)
                 for n in assigned:
                     jadwal[n, day, s] = bangsal_idx
                     assigned_nurses.add(n)
-
-        # **Kurangi day off untuk perawat yang tidak bertugas hari ini**
         for n in range(perawat):
             if n not in assigned_nurses:
                 daftar_perawat[n]["day_off_left_per_minggu"] -= 1
-                          
     return jadwal
 
 #cek nurse yang paling lama bekerjanya
@@ -194,17 +184,19 @@ def display_schedule(jadwal):
                 if s == 2 and bangsal["nama"] in klinik_tidak_buka_malam:
                     continue
                 
+                #cek perawat disetiap shift
                 nurses_in_shift = [n for n in range(perawat) if jadwal[n, d, s] == b_idx]
+                #assign ketua shift pada setiap bangsal
                 ketua_shift = determine_shift_leader(nurses_in_shift)
                 
                 for n in nurses_in_shift:
                     data.append([
                         daftar_perawat[n]["nama"], d + 1, nama_shift[s], bangsal["nama"],
-                        "Ketua" if n == ketua_shift else "Anggota"
+                        "Ketua" if n == ketua_shift else "Anggota", round(daftar_perawat[n]["lama_bekerja"],1)
                     ])
                     count_per_bangsal[bangsal["nama"]] += 1
     
-    df = pd.DataFrame(data, columns=["Perawat", "Hari", "Shift", "Bangsal/Klinik", "Peran"])
+    df = pd.DataFrame(data, columns=["Perawat", "Hari", "Shift", "Bangsal/Klinik", "Peran", "Lama Bekerja"])
     print("Jumlah perawat per bangsal:")
     for bangsal, count in count_per_bangsal.items():
         print(f"{bangsal}: {count}")
