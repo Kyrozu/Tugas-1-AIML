@@ -96,8 +96,13 @@ def init_particle():
                           
     return jadwal
 
-#penalty/violence point
+#penalty/fitness point
 V1, V2, V3, V4 = 50, 50, 40, 30
+
+#V1 : 2 shift dalam 1 hari 
+#V2 : 2 shift berturut-turut
+#V3 : tidak sesuai kapasitas
+#V4 : tdk dipakai (dipakai jika ada kriteria penalty baru)
 
 # menghitung jumlah fitness setiap particle
 # semua awale fitnessnya sama, terus dikurangi buat setiap aturan yg dilanggar
