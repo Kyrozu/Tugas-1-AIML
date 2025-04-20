@@ -14,7 +14,7 @@ struktur_bangsal = {
     "dalam": {"jumlah": 3, "per_shift": 2},
     "icu": {"jumlah": 3, "per_shift": 4, "sertif": "icu"},
     "ibu": {"jumlah": 1, "per_shift": 4},
-    "bayi": {"jumlah": 1, "per_shift": 8, "sertif": "neonatal"},
+    "bayi": {"jumlah": 1, "per_shift": 8, "sertif": "bayi"},
     "klinik_umum": {"jumlah": 2, "per_shift": 2, "shift": [1, 2]},
     "klinik_gigi": {"jumlah": 1, "per_shift": 2, "shift": [1, 2], "sertif": "gigi"},
     "igd": {"jumlah": 1, "per_shift": 8}
@@ -22,7 +22,7 @@ struktur_bangsal = {
 
 # Data dummy perawat
 perawat_list = []
-sertif_opsi = [[], ['icu'], ['neonatal'], ['gigi'], ['icu', 'neonatal']]
+sertif_opsi = [[], ['icu'], ['bayi'], ['gigi'], ['icu', 'bayi'], ['icu', 'gigi'], ['bayi', 'gigi'], ['icu', 'bayi', 'gigi']]
 for i in range(JUMLAH_PERAWAT):
     perawat = {
         "nama": f"Perawat_{i+1}",
