@@ -179,30 +179,42 @@ def alokasikan_ke_bangsal(perawat_aktif, shift_ke, hari_ke):
                     perawat_aktif.remove(p)
     return alokasi
 
+# Tampilkan jadwal
+# def tampilkan_jadwal(pso):
+#     print("\nJadwal Perawat Rumah Sakit Selama 30 Hari:")
+#     for hari in range(JUMLAH_HARI):
+#         print(f"Hari {hari+1}:")
+#         for shift_ke in [1, 2, 3]:
+#             print(f"  Shift {SHIFT_LABEL[shift_ke-1]}:")
+#             perawat_untuk_shift = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
+#             for p in perawat_untuk_shift:
+#                 print(f"    {p.perawat['nama']}")
+
 # Main execution
 if __name__ == "__main__":
     pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
     pso.optimize()
+    # tampilkan_jadwal(pso)
 
-    for hari in range(JUMLAH_HARI):
-        for shift_ke in [1, 2, 3]:
-            aktif = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
-            hasil_alokasi = alokasikan_ke_bangsal(aktif[:], shift_ke, hari)
-            for unit, dipilih in hasil_alokasi.items():
-                kepala = tunjuk_kepala_shift(dipilih)
-                pasangan = pasangan_baru_senior(dipilih)
+    # for hari in range(JUMLAH_HARI):
+    #     for shift_ke in [1, 2, 3]:
+    #         aktif = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
+    #         hasil_alokasi = alokasikan_ke_bangsal(aktif[:], shift_ke, hari)
+    #         for unit, dipilih in hasil_alokasi.items():
+    #             kepala = tunjuk_kepala_shift(dipilih)
+    #             pasangan = pasangan_baru_senior(dipilih)
                 
-                print(f"\nHari-{hari+1} | Shift-{SHIFT_LABEL[shift_ke-1]} | Unit: {unit}")
-                print(f"  Kepala Shift: {kepala.perawat['nama']} (Lama bekerja: {kepala.perawat['lama_bekerja']} tahun)" if kepala else "  Kepala Shift: Belum ada")
+    #             print(f"\nHari-{hari+1} | Shift-{SHIFT_LABEL[shift_ke-1]} | Unit: {unit}")
+    #             print(f"  Kepala Shift: {kepala.perawat['nama']} (Lama bekerja: {kepala.perawat['lama_bekerja']} tahun)" if kepala else "  Kepala Shift: Belum ada")
 
-                print("  Daftar Perawat:")
-                for p in dipilih:
-                    print(f"    - {p.perawat['nama']} (Lama bekerja: {p.perawat['lama_bekerja']} tahun)")
+    #             print("  Daftar Perawat:")
+    #             for p in dipilih:
+    #                 print(f"    - {p.perawat['nama']} (Lama bekerja: {p.perawat['lama_bekerja']} tahun)")
                 
-                if pasangan:
-                    print("  Pasangan Baru-Senior:")
-                    for b, s in pasangan:
-                        print(f"    - {b.perawat['nama']} (Baru, {b.perawat['lama_bekerja']} th) & {s.perawat['nama']} (Senior, {s.perawat['lama_bekerja']} th)")
-                else:
-                    print("  Tidak ada pasangan baru-senior.")
+    #             if pasangan:
+    #                 print("  Pasangan Baru-Senior:")
+    #                 for b, s in pasangan:
+    #                     print(f"    - {b.perawat['nama']} (Baru, {b.perawat['lama_bekerja']} th) & {s.perawat['nama']} (Senior, {s.perawat['lama_bekerja']} th)")
+    #             else:
+    #                 print("  Tidak ada pasangan baru-senior.")
 
