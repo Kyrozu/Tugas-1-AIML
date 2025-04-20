@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 20 2025
-@author: Greg
-Versi lengkap PSO untuk penjadwalan 275 perawat rumah sakit selama 1 bulan
-"""
-
 import random
 from collections import defaultdict
 import copy
