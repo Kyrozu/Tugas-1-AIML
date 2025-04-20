@@ -116,7 +116,7 @@ class PSO:
 
 
     def update_velocity_position(self, particle):
-        w, c1, c2 = 0.5, 1.5, 1.5
+        w, c1, c2 = 0.9, 1.5, 1.5
         for i in range(JUMLAH_HARI):
             r1, r2 = random.random(), random.random()
             cognitive = c1 * r1 * (particle.best_position[i] - particle.position[i])
@@ -136,7 +136,6 @@ class PSO:
                 if f < self.global_best_fitness:
                     self.global_best_fitness = f
                     self.global_best = copy.deepcopy(p.position)
-                print(f"Iterasi {iterasi+1}: Fitness = {f}")
             for p in self.swarm:
                 self.update_velocity_position(p)
             print(f"Iterasi {iterasi+1}: Global Best Fitness = {self.global_best_fitness}")
