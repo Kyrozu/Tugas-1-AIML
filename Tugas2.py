@@ -215,9 +215,7 @@ def alokasikan_ke_bangsal(perawat_aktif, shift_ke, hari_ke):
                     perawat_aktif.remove(p)
     return alokasi
 
-
-# Main execution
-if __name__ == "__main__":
+def generateJadwal():
     pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
     pso.optimize()
 
@@ -243,3 +241,41 @@ if __name__ == "__main__":
                         print(f"    - {b.perawat['nama']} (Baru, {b.perawat['lama_bekerja']} th) & {s.perawat['nama']} (Senior, {s.perawat['lama_bekerja']} th)")
                 else:
                     print("  Tidak ada pasangan baru-senior.")
+
+# Main execution
+if __name__ == "__main__":
+    while True:
+        print("1. Request Cuti")
+        print("2. Request Swap Jadwal")
+        print("3. Generate Jadwal")
+        print("0. Keluar")
+
+        pilihan = int(input("Pilih menu: "))
+
+        match pilihan:
+            case 1:
+                # Request Cuti
+                id_perawat = int(input("ID Perawat: "))
+                tanggal_cuti = int(input("Tanggal Cuti: "))
+                # tambah fitness perawat ini gk boleh di tanggal itu
+
+
+            case 2:
+                # Request Swap Jadwal
+                id_perawat = int(input("ID Perawat 1: "))
+                tanggal_pertama = int(input("Tanggal pertama: "))
+                tanggal_kedua = int(input("Tanggal kedua: "))
+                # tambah fitness perawat ini gk boleh di tanggal pertama
+                # tambah fitness perawat ini harus di tanggal kedua
+
+
+            case 3:
+                # Generate Jadwal
+                generateJadwal()
+
+            case 0:
+                print("Good Bye...")
+                break
+            
+            case _:
+                print("Pilihan tidak dikenali")
