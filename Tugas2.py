@@ -136,6 +136,22 @@ class PSO:
             hari_kerja = sum(1 for hari in range(awal, akhir) if jadwal[hari] > 0)
             if hari_kerja > 5:
                 skor += (hari_kerja - 5)  # Penalti ringan per kelebihan hari kerja dalam 1 minggu
+        
+        #penalti perawat bekerja di hari cuti
+        for cuti in cuti_list:
+            if cuti["tanggal_cuti"] < JUMLAH_HARI:
+                nama_perawat = cuti["nama"]
+                for hari in range(JUMLAH_HARI):
+                    if jadwal[hari] > 0 and perawat_list[hari]["nama"] == nama_perawat:
+                        skor += 50
+
+        # penalti perawat tidak bekerja di hari swap
+        for swap in swap_list:
+            if swap["tanggal_swap"] < JUMLAH_HARI:
+                nama_perawat = swap["nama"]
+                for hari in range(JUMLAH_HARI):
+                    if jadwal[hari] == 0 and perawat_list[hari]["nama"] == nama_perawat:
+                        skor += 50
 
         return skor
 
@@ -215,65 +231,80 @@ def alokasikan_ke_bangsal(perawat_aktif, shift_ke, hari_ke):
                     perawat_aktif.remove(p)
     return alokasi
 
-def generateJadwal():
-    pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
-    pso.optimize()
-
-    for hari in range(JUMLAH_HARI):
-        for shift_ke in [1, 2, 3]:
-            aktif = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
-            #alokasi perawat ke bangsal sesuai shift dan kriteria dari daftar perawat aktif
-            hasil_alokasi = alokasikan_ke_bangsal(aktif[:], shift_ke, hari)
-            for unit, dipilih in hasil_alokasi.items():
-                kepala = tunjuk_kepala_shift(dipilih)
-                pasangan = pasangan_baru_senior(dipilih)
-                
-                print(f"\nHari-{hari+1} | Shift-{SHIFT_LABEL[shift_ke-1]} | Unit: {unit}")
-                print(f"  Kepala Shift: {kepala.perawat['nama']} (Lama bekerja: {kepala.perawat['lama_bekerja']} tahun)" if kepala else "  Kepala Shift: Belum ada")
-
-                print("  Daftar Perawat:")
-                for p in dipilih:
-                    print(f"    - {p.perawat['nama']} (Lama bekerja: {p.perawat['lama_bekerja']} tahun)")
-                
-                if pasangan:
-                    print("  Pasangan Baru-Senior:")
-                    for b, s in pasangan:
-                        print(f"    - {b.perawat['nama']} (Baru, {b.perawat['lama_bekerja']} th) & {s.perawat['nama']} (Senior, {s.perawat['lama_bekerja']} th)")
-                else:
-                    print("  Tidak ada pasangan baru-senior.")
+   
 
 # Main execution
 if __name__ == "__main__":
+    cuti_list = []
+    swap_list = []
     while True:
         print("1. Request Cuti")
         print("2. Request Swap Jadwal")
         print("3. Generate Jadwal")
         print("0. Keluar")
 
-        pilihan = int(input("Pilih menu: "))
+        pilihan = input("Pilih menu: ")
 
         match pilihan:
-            case 1:
+            case '1':
                 # Request Cuti
-                id_perawat = int(input("ID Perawat: "))
+                nama_perawat = input("Nama Perawat: ")
                 tanggal_cuti = int(input("Tanggal Cuti: "))
+                cuti = {
+                    "nama": nama_perawat,
+                    "tanggal_cuti": tanggal_cuti
+                }
+                cuti_list.append(cuti)
                 # tambah fitness perawat ini gk boleh di tanggal itu
 
-
-            case 2:
+            case '2':
                 # Request Swap Jadwal
-                id_perawat = int(input("ID Perawat 1: "))
+                nama_perawat = input("Nama Perawat: ")
                 tanggal_pertama = int(input("Tanggal pertama: "))
                 tanggal_kedua = int(input("Tanggal kedua: "))
+                cuti = {
+                    "nama": nama_perawat,
+                    "tanggal_cuti": tanggal_pertama
+                }
+                cuti_list.append(cuti)
+                swap = {
+                    "nama": nama_perawat,
+                    "tanggal_swap": tanggal_kedua
+                }
+                swap_list.append(swap)
                 # tambah fitness perawat ini gk boleh di tanggal pertama
                 # tambah fitness perawat ini harus di tanggal kedua
 
 
-            case 3:
+            case '3':
                 # Generate Jadwal
-                generateJadwal()
+                pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
+                pso.optimize()
 
-            case 0:
+                for hari in range(JUMLAH_HARI):
+                    for shift_ke in [1, 2, 3]:
+                        aktif = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
+                        #alokasi perawat ke bangsal sesuai shift dan kriteria dari daftar perawat aktif
+                        hasil_alokasi = alokasikan_ke_bangsal(aktif[:], shift_ke, hari)
+                        for unit, dipilih in hasil_alokasi.items():
+                            kepala = tunjuk_kepala_shift(dipilih)
+                            pasangan = pasangan_baru_senior(dipilih)
+                            
+                            print(f"\nHari-{hari+1} | Shift-{SHIFT_LABEL[shift_ke-1]} | Unit: {unit}")
+                            print(f"  Kepala Shift: {kepala.perawat['nama']} (Lama bekerja: {kepala.perawat['lama_bekerja']} tahun)" if kepala else "  Kepala Shift: Belum ada")
+
+                            print("  Daftar Perawat:")
+                            for p in dipilih:
+                                print(f"    - {p.perawat['nama']} (Lama bekerja: {p.perawat['lama_bekerja']} tahun)")
+                            
+                            if pasangan:
+                                print("  Pasangan Baru-Senior:")
+                                for b, s in pasangan:
+                                    print(f"    - {b.perawat['nama']} (Baru, {b.perawat['lama_bekerja']} th) & {s.perawat['nama']} (Senior, {s.perawat['lama_bekerja']} th)")
+                            else:
+                                print("  Tidak ada pasangan baru-senior.")
+
+            case '0':
                 print("Good Bye...")
                 break
             
