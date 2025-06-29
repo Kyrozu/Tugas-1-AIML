@@ -4,22 +4,31 @@ from collections import defaultdict
 import copy
 
 # Parameter dasar
-JUMLAH_PERAWAT = 275
 JUMLAH_HARI = 30
 JUMLAH_SHIFT = 3
 SHIFT_LABEL = ['Pagi', 'Sore', 'Malam']
 
-# Struktur bangsal dan kebutuhan per shift
-struktur_bangsal = {
-    "menular": {"jumlah": 6, "per_shift": 4},
-    "dalam": {"jumlah": 3, "per_shift": 2},
-    "icu": {"jumlah": 3, "per_shift": 4, "sertif": "icu"},
-    "ibu": {"jumlah": 1, "per_shift": 4},
-    "bayi": {"jumlah": 1, "per_shift": 8, "sertif": "bayi"},
-    "klinik_umum": {"jumlah": 2, "per_shift": 2, "shift": [1, 2]},
-    "klinik_gigi": {"jumlah": 1, "per_shift": 2, "shift": [1, 2], "sertif": "gigi"},
-    "igd": {"jumlah": 1, "per_shift": 8}
-}
+# Membaca file Excel
+df_bangsal = pd.read_excel("struktur_bangsal.xlsx")
+
+# Konversi ke struktur dictionary
+struktur_bangsal = {}
+
+for _, row in df_bangsal.iterrows():
+    unit = row['unit']
+    struktur_bangsal[unit] = {
+        "jumlah": int(row['jumlah']),
+        "per_shift": int(row['per_shift']),
+    }
+
+    # Tambahkan sertifikat jika ada
+    if pd.notna(row.get('sertif')) and row['sertif']:
+        struktur_bangsal[unit]["sertif"] = str(row['sertif']).strip()
+
+    # Tambahkan shift jika ada (dan tidak semua shift)
+    if pd.notna(row.get('shift')) and str(row['shift']).strip() != "1, 2, 3":
+        struktur_bangsal[unit]["shift"] = [int(s.strip()) for s in str(row['shift']).split(',')]
+
 
 # Membaca data perawat dari Excel
 df = pd.read_excel("perawat.xlsx")  # Pastikan file ini berada di folder kerja
@@ -36,6 +45,8 @@ for _, row in df.iterrows():
     }
     perawat_list.append(perawat)
 
+JUMLAH_PERAWAT = len(perawat_list)
+print(f"Jumlah perawat: {JUMLAH_PERAWAT}")
 # Representasi Particle
 class Particle:
     def __init__(self, perawat):
