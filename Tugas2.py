@@ -141,13 +141,13 @@ class PSO:
         for cuti in cuti_list:
             if cuti["nama"] == particle.perawat["nama"] and 0 <= cuti["tanggal_cuti"] < JUMLAH_HARI:
                 if jadwal[cuti["tanggal_cuti"]] > 0:
-                    skor += 100  # Penalti jika perawat kerja di hari cuti
+                    skor += 400  # Penalti jika perawat kerja di hari cuti
 
         # penalti perawat tidak bekerja di hari swap
         for swap in swap_list:
             if swap["nama"] == particle.perawat["nama"] and 0 <= swap["tanggal_swap"] < JUMLAH_HARI:
                 if jadwal[swap["tanggal_swap"]] == 0:
-                    skor += 100  # Penalti jika tidak kerja di hari swap
+                    skor += 400  # Penalti jika tidak kerja di hari swap
 
         return skor
 
