@@ -67,9 +67,10 @@ def simpan_cuti_swap():
             df_cuti.to_excel(writer, sheet_name="cuti", index=False)
             df_swap.to_excel(writer, sheet_name="swap", index=False)
 
-        print("✅ Data cuti dan swap disimpan dengan penyesuaian tanggal +1.")
+        print("✅ Data cuti dan swap disimpan.")
     except Exception as e:
         print("❌ Gagal menyimpan cuti/swap:", e)
+
 
 class Particle:
     def __init__(self, perawat, cuti_list, swap_list):
@@ -104,8 +105,12 @@ class PSO:
             shift_hari_ini = jadwal[hari]
             if jadwal.count(shift_hari_ini) > 1:
                 skor += 5
+            else:
+                skor -= 2 
             if hari > 0 and jadwal[hari - 1] == 3 and jadwal[hari] == 1:
                 skor += 5
+            else:
+                skor -= 2
 
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
@@ -116,6 +121,8 @@ class PSO:
                             for p in [p for p in self.swarm if p.best_position[hari] == shift_ke]:
                                 if sertif_diperlukan not in p.perawat["sertifikat"]:
                                     skor += 3
+                                else:
+                                    skor -= 1
 
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
@@ -124,6 +131,8 @@ class PSO:
                     perawat_terpilih = [p for p in self.swarm if p.best_position[hari] == shift_ke]
                     if len(perawat_terpilih) != dibutuhkan:
                         skor += 10 * abs(dibutuhkan - len(perawat_terpilih))
+                    else:
+                        skor -= 2
 
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
@@ -132,6 +141,8 @@ class PSO:
                 for b, s in pasangan:
                     if not (b.perawat["lama_bekerja"] < 5 and s.perawat["lama_bekerja"] > 20):
                         skor += 7
+                    else:
+                        skor -= 3
 
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
@@ -140,12 +151,19 @@ class PSO:
                     kepala = tunjuk_kepala_shift(perawat_untuk_shift)
                     if not kepala:
                         skor += 8
+                    else:
+                        if kepala.perawat["lama_bekerja"] < 5:
+                            skor += 3
+                        else:
+                            skor -= 2
 
         for minggu_ke in range(4):
             awal, akhir = minggu_ke * 7, (minggu_ke + 1) * 7
             hari_kerja = sum(1 for hari in range(awal, min(akhir, JUMLAH_HARI)) if jadwal[hari] > 0)
             if hari_kerja > 5:
                 skor += (hari_kerja - 5)
+            else:
+                skor -= 5
 
         for cuti in cuti_list:
             if cuti["nama"] == nama and 0 <= cuti["tanggal_cuti"] < JUMLAH_HARI:
@@ -243,8 +261,8 @@ if __name__ == "__main__":
 
         elif pilihan == '2':
             nama_perawat = input("Nama Perawat: ")
-            tanggal_pertama = int(input("Tanggal pertama (cuti, 1-30): "))
-            tanggal_kedua = int(input("Tanggal kedua (ganti kerja, 1-30): "))
+            tanggal_pertama = int(input("Tanggal pertama (cuti, 1-30): "))-1
+            tanggal_kedua = int(input("Tanggal kedua (ganti kerja, 1-30): "))-1
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_pertama})
             swap_list.append({"nama": nama_perawat, "tanggal_swap": tanggal_kedua})
             simpan_cuti_swap()
