@@ -255,7 +255,7 @@ if __name__ == "__main__":
 
         if pilihan == '1':
             nama_perawat = input("Nama Perawat: ")
-            tanggal_cuti = int(input("Tanggal Cuti (1-30): "))
+            tanggal_cuti = int(input("Tanggal Cuti (1-30): "))-1
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_cuti})
             simpan_cuti_swap()
 
