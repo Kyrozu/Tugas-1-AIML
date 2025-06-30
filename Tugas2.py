@@ -44,13 +44,13 @@ cuti_list, swap_list = [], []
 
 try:
     df_cuti = pd.read_excel("perawat.xlsx", sheet_name="cuti")
-    cuti_list = [{"nama": row["nama"], "tanggal_cuti": int(row["tanggal_cuti"])} for _, row in df_cuti.iterrows()]
+    cuti_list = [{"nama": row["nama"], "tanggal_cuti": int(row["tanggal_cuti"])-1} for _, row in df_cuti.iterrows()]
 except:
     pass
 
 try:
     df_swap = pd.read_excel("perawat.xlsx", sheet_name="swap")
-    swap_list = [{"nama": row["nama"], "tanggal_swap": int(row["tanggal_swap"])} for _, row in df_swap.iterrows()]
+    swap_list = [{"nama": row["nama"], "tanggal_swap": int(row["tanggal_swap"])-1} for _, row in df_swap.iterrows()]
 except:
     pass
 
@@ -233,14 +233,14 @@ if __name__ == "__main__":
 
         if pilihan == '1':
             nama_perawat = input("Nama Perawat: ")
-            tanggal_cuti = int(input("Tanggal Cuti (1-30): ")) - 1
+            tanggal_cuti = int(input("Tanggal Cuti (1-30): "))
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_cuti})
             simpan_cuti_swap()
 
         elif pilihan == '2':
             nama_perawat = input("Nama Perawat: ")
-            tanggal_pertama = int(input("Tanggal pertama (cuti, 1-30): ")) - 1
-            tanggal_kedua = int(input("Tanggal kedua (ganti kerja, 1-30): ")) - 1
+            tanggal_pertama = int(input("Tanggal pertama (cuti, 1-30): "))
+            tanggal_kedua = int(input("Tanggal kedua (ganti kerja, 1-30): "))
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_pertama})
             swap_list.append({"nama": nama_perawat, "tanggal_swap": tanggal_kedua})
             simpan_cuti_swap()
