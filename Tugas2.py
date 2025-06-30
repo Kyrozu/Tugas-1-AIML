@@ -2,16 +2,16 @@ import pandas as pd
 import random
 from collections import defaultdict
 import copy
+import os
 
 # Parameter dasar
 JUMLAH_HARI = 30
 JUMLAH_SHIFT = 3
 SHIFT_LABEL = ['Pagi', 'Sore', 'Malam']
 
-# Membaca file Excel
+# Membaca struktur bangsal
 df_bangsal = pd.read_excel("struktur_bangsal.xlsx")
 
-# Konversi ke struktur dictionary
 struktur_bangsal = {}
 for _, row in df_bangsal.iterrows():
     unit = row['unit']
@@ -24,8 +24,8 @@ for _, row in df_bangsal.iterrows():
     if pd.notna(row.get('shift')) and str(row['shift']).strip() != "1, 2, 3":
         struktur_bangsal[unit]["shift"] = [int(s.strip()) for s in str(row['shift']).split(',')]
 
-# Membaca data perawat dari Excel
-df = pd.read_excel("perawat.xlsx")
+# Membaca data perawat
+df = pd.read_excel("perawat.xlsx", sheet_name=0)
 perawat_list = []
 for _, row in df.iterrows():
     sertifikat = [s.strip() for s in str(row['sertifikat']).split(',')] if pd.notna(row['sertifikat']) else []
@@ -39,8 +39,33 @@ for _, row in df.iterrows():
 
 JUMLAH_PERAWAT = len(perawat_list)
 
-cuti_list = []
-swap_list = []
+# Membaca cuti dan swap dari sheet excel jika ada
+cuti_list, swap_list = [], []
+
+try:
+    df_cuti = pd.read_excel("perawat.xlsx", sheet_name="cuti")
+    cuti_list = [{"nama": row["nama"], "tanggal_cuti": int(row["tanggal_cuti"])} for _, row in df_cuti.iterrows()]
+except:
+    pass
+
+try:
+    df_swap = pd.read_excel("perawat.xlsx", sheet_name="swap")
+    swap_list = [{"nama": row["nama"], "tanggal_swap": int(row["tanggal_swap"])} for _, row in df_swap.iterrows()]
+except:
+    pass
+
+def simpan_cuti_swap():
+    try:
+        df_cuti = pd.DataFrame(cuti_list)
+        df_swap = pd.DataFrame(swap_list)
+
+        with pd.ExcelWriter("perawat.xlsx", engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            df_cuti.to_excel(writer, sheet_name="cuti", index=False)
+            df_swap.to_excel(writer, sheet_name="swap", index=False)
+
+        print("✅ Data cuti dan swap disimpan.")
+    except Exception as e:
+        print("❌ Gagal menyimpan cuti/swap:", e)
 
 class Particle:
     def __init__(self, perawat, cuti_list, swap_list):
@@ -58,8 +83,6 @@ class Particle:
             if swap["nama"] == perawat["nama"] and 0 <= swap["tanggal_swap"] < JUMLAH_HARI:
                 self.position[swap["tanggal_swap"]] = random.randint(1, JUMLAH_SHIFT)
 
-
-
 class PSO:
     def __init__(self, swarm_size=275, max_iter=100):
         self.swarm = [Particle(p, cuti_list, swap_list) for p in perawat_list]
@@ -67,7 +90,6 @@ class PSO:
         self.global_best_fitness = float('inf')
         self.max_iter = max_iter
         self.fitness_history = []
-
 
     def fitness(self, particle):
         skor = 0
@@ -126,15 +148,14 @@ class PSO:
                 if jadwal[cuti["tanggal_cuti"]] > 0:
                     skor += 1000
                 else:
-                    skor -= 100  # reward kecil jika berhasil
-
+                    skor -= 100
 
         for swap in swap_list:
             if swap["nama"] == nama and 0 <= swap["tanggal_swap"] < JUMLAH_HARI:
                 if jadwal[swap["tanggal_swap"]] == 0:
                     skor += 1000
                 else:
-                    skor -= 100  # reward kecil jika berhasil
+                    skor -= 100
 
         return skor
 
@@ -148,7 +169,6 @@ class PSO:
             particle.position[i] += v_new
             particle.position[i] = max(0, min(particle.position[i], 3))
 
-            # Hormati cuti dan swap
             nama = particle.perawat["nama"]
             for cuti in cuti_list:
                 if cuti["nama"] == nama and cuti["tanggal_cuti"] == i:
@@ -171,7 +191,6 @@ class PSO:
             for p in self.swarm:
                 self.update_velocity_position(p)
             self.fitness_history.append(self.global_best_fitness)
-
 
 def tunjuk_kepala_shift(dipilih):
     return max(dipilih, key=lambda p: p.perawat["lama_bekerja"], default=None)
@@ -205,7 +224,7 @@ def alokasikan_ke_bangsal(perawat_aktif, shift_ke, hari_ke):
 
 if __name__ == "__main__":
     while True:
-        print("1. Request Cuti")
+        print("\n1. Request Cuti")
         print("2. Request Swap Jadwal")
         print("3. Generate Jadwal")
         print("0. Keluar")
@@ -216,6 +235,7 @@ if __name__ == "__main__":
             nama_perawat = input("Nama Perawat: ")
             tanggal_cuti = int(input("Tanggal Cuti (1-30): ")) - 1
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_cuti})
+            simpan_cuti_swap()
 
         elif pilihan == '2':
             nama_perawat = input("Nama Perawat: ")
@@ -223,6 +243,7 @@ if __name__ == "__main__":
             tanggal_kedua = int(input("Tanggal kedua (ganti kerja, 1-30): ")) - 1
             cuti_list.append({"nama": nama_perawat, "tanggal_cuti": tanggal_pertama})
             swap_list.append({"nama": nama_perawat, "tanggal_swap": tanggal_kedua})
+            simpan_cuti_swap()
 
         elif pilihan == '3':
             pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
@@ -254,4 +275,4 @@ if __name__ == "__main__":
             break
 
         else:
-            print("Pilihan tidak dikenali")
+            print("Pilihan tidak dikenali.")
