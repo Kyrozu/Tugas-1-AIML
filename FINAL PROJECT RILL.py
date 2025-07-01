@@ -246,12 +246,14 @@ def alokasikan_ke_bangsal(perawat_aktif, shift_ke, hari_ke):
 
 if __name__ == "__main__":
     while True:
-        print("\n1. Request Cuti")
+        print("\n-------- Menu --------")
+        print("1. Request Cuti")
         print("2. Request Swap Jadwal")
         print("3. Generate Jadwal")
         print("0. Keluar")
-
+        print("----------------------")
         pilihan = input("Pilih menu: ")
+        print("----------------------\n")
 
         if pilihan == '1':
             nama_perawat = input("Nama Perawat: ")
@@ -268,6 +270,8 @@ if __name__ == "__main__":
             simpan_cuti_swap()
 
         elif pilihan == '3':
+            print("⏳ Generating jadwal...")
+
             pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
             pso.optimize()
             for hari in range(JUMLAH_HARI):
@@ -293,8 +297,8 @@ if __name__ == "__main__":
                             print("  Tidak ada pasangan baru-senior.")
 
         elif pilihan == '0':
-            print("Good Bye...")
+            print("👋 Good Bye...\n")
             break
 
         else:
-            print("Pilihan tidak dikenali.")
+            print("❌ Pilihan tidak dikenali")
