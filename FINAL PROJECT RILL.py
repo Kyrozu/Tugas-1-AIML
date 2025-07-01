@@ -9,7 +9,7 @@ JUMLAH_HARI = 30
 JUMLAH_SHIFT = 3
 SHIFT_LABEL = ['Pagi', 'Sore', 'Malam']
 
-# Membaca struktur bangsal
+# Read struktur bangsal                                                             "NEW"
 df_bangsal = pd.read_excel("struktur_bangsal.xlsx")
 
 struktur_bangsal = {}
@@ -24,7 +24,7 @@ for _, row in df_bangsal.iterrows():
     if pd.notna(row.get('shift')) and str(row['shift']).strip() != "1, 2, 3":
         struktur_bangsal[unit]["shift"] = [int(s.strip()) for s in str(row['shift']).split(',')]
 
-# Membaca data perawat
+# Read data perawat                                                                 "NEW"
 df = pd.read_excel("perawat.xlsx", sheet_name=0)
 perawat_list = []
 for _, row in df.iterrows():
@@ -39,7 +39,7 @@ for _, row in df.iterrows():
 
 JUMLAH_PERAWAT = len(perawat_list)
 
-# Membaca cuti dan swap dari sheet excel jika ada
+# Read cuti dan swap                                                                "NEW"
 cuti_list, swap_list = [], []
 
 try:
@@ -54,22 +54,24 @@ try:
 except:
     pass
 
+# Write request cuti dan swap ke dalam file Excel                                    "NEW"
 def simpan_cuti_swap():
     try:
-        # Menambahkan +1 pada tanggal cuti dan swap sebelum disimpan
-        df_cuti = pd.DataFrame(cuti_list)
+        # Ubah jadi dataframe agar sesuai format exel
+        df_cuti = pd.DataFrame(cuti_list) 
         df_cuti["tanggal_cuti"] = df_cuti["tanggal_cuti"] + 1
 
         df_swap = pd.DataFrame(swap_list)
         df_swap["tanggal_swap"] = df_swap["tanggal_swap"] + 1
 
+        # Write data frame ke exel masing2
         with pd.ExcelWriter("perawat.xlsx", engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
             df_cuti.to_excel(writer, sheet_name="cuti", index=False)
             df_swap.to_excel(writer, sheet_name="swap", index=False)
 
-        print("✅ Data cuti dan swap disimpan.")
+        print("✅ Data disimpan")
     except Exception as e:
-        print("❌ Gagal menyimpan cuti/swap:", e)
+        print("❌ Gagal menyimpan data:", e)
 
 
 class Particle:
@@ -101,17 +103,23 @@ class PSO:
         jadwal = particle.position
         nama = particle.perawat["nama"]
 
+        # 1. Penalti shift untuk jadwal harian
         for hari in range(JUMLAH_HARI):
             shift_hari_ini = jadwal[hari]
+            
+            # Penalti untuk shift > 1 dalam 1 hari
             if jadwal.count(shift_hari_ini) > 1:
                 skor += 5
             else:
                 skor -= 2 
+            
+            # Penalti jika langsung shift pagi setelah shift malam
             if hari > 0 and jadwal[hari - 1] == 3 and jadwal[hari] == 1:
                 skor += 5
             else:
                 skor -= 2
-
+       
+        # 2. Validasi sertifikasi (ICU, Bayi, Klinik Gigi)
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
                 for unit, config in struktur_bangsal.items():
@@ -123,7 +131,8 @@ class PSO:
                                     skor += 3
                                 else:
                                     skor -= 1
-
+        
+        # 3. Pastikan jumlah perawat sesuai kebutuhan per bangsal
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
                 for unit, config in struktur_bangsal.items():
@@ -134,6 +143,7 @@ class PSO:
                     else:
                         skor -= 2
 
+        # 4. Validasi kombinasi baru-senior di setiap shift
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
                 perawat_aktif = [p for p in self.swarm if p.best_position[hari] == shift_ke]
@@ -144,6 +154,7 @@ class PSO:
                     else:
                         skor -= 3
 
+        # 5. Pastikan setiap shift punya kepala shift yang layak
         for hari in range(JUMLAH_HARI):
             for shift_ke in [1, 2, 3]:
                 for unit, config in struktur_bangsal.items():
@@ -156,7 +167,8 @@ class PSO:
                             skor += 3
                         else:
                             skor -= 2
-
+        
+        # 6. Validasi jumlah hari kerja per minggu tidak lebih dari 5 hari
         for minggu_ke in range(4):
             awal, akhir = minggu_ke * 7, (minggu_ke + 1) * 7
             hari_kerja = sum(1 for hari in range(awal, min(akhir, JUMLAH_HARI)) if jadwal[hari] > 0)
@@ -165,6 +177,7 @@ class PSO:
             else:
                 skor -= 5
 
+        # 7. Validasi cuti: penalti jika masih dijadwalkan kerja saat cuti          "NEW"
         for cuti in cuti_list:
             if cuti["nama"] == nama and 0 <= cuti["tanggal_cuti"] < JUMLAH_HARI:
                 if jadwal[cuti["tanggal_cuti"]] > 0:
@@ -172,6 +185,7 @@ class PSO:
                 else:
                     skor -= 100
 
+        # 8. Validasi swap: penalti jika tidak kerja saat seharusnya swap          "NEW"
         for swap in swap_list:
             if swap["nama"] == nama and 0 <= swap["tanggal_swap"] < JUMLAH_HARI:
                 if jadwal[swap["tanggal_swap"]] == 0:
