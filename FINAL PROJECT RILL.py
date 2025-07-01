@@ -73,6 +73,13 @@ def simpan_cuti_swap():
     except Exception as e:
         print("❌ Gagal menyimpan data:", e)
 
+def simpan_jadwal_excel(jadwal_final):
+    df_output = pd.DataFrame(jadwal_final)
+    with pd.ExcelWriter("jadwal_perawat.xlsx", engine='openpyxl', mode='w') as writer:
+        df_output.to_excel(writer, sheet_name="jadwal", index=False)
+    print("✅ Jadwal berhasil disimpan ke file 'jadwal_perawat.xlsx'")
+
+
 
 class Particle:
     def __init__(self, perawat, cuti_list, swap_list):
@@ -285,9 +292,11 @@ if __name__ == "__main__":
 
         elif pilihan == '3':
             print("⏳ Generating jadwal...")
-
             pso = PSO(swarm_size=JUMLAH_PERAWAT, max_iter=10)
             pso.optimize()
+
+            jadwal_final = []
+
             for hari in range(JUMLAH_HARI):
                 for shift_ke in [1, 2, 3]:
                     aktif = [p for p in pso.swarm if p.best_position[hari] == shift_ke]
@@ -295,6 +304,23 @@ if __name__ == "__main__":
                     for unit, dipilih in hasil_alokasi.items():
                         kepala = tunjuk_kepala_shift(dipilih)
                         pasangan = pasangan_baru_senior(dipilih)
+
+                        for p in dipilih:
+                            row = {
+                                "Hari": hari + 1,
+                                "Shift": SHIFT_LABEL[shift_ke - 1],
+                                "Unit": unit,
+                                "Nama Perawat": p.perawat['nama'],
+                                "Lama Bekerja": p.perawat['lama_bekerja'],
+                                "Kepala Shift": kepala.perawat['nama'] if kepala == p else "",
+                                "Pasangan Baru-Senior": ""
+                            }
+                            for b, s in pasangan:
+                                if b == p:
+                                    row["Pasangan Baru-Senior"] = f"{b.perawat['nama']} & {s.perawat['nama']}"
+                            jadwal_final.append(row)
+
+                        # Tampilan di layar (boleh tetap atau dihapus)
                         print(f"\nHari-{hari+1} | Shift-{SHIFT_LABEL[shift_ke-1]} | Unit: {unit}")
                         if kepala:
                             print(f"  Kepala Shift: {kepala.perawat['nama']} ({kepala.perawat['lama_bekerja']} th)")
@@ -309,6 +335,9 @@ if __name__ == "__main__":
                                 print(f"    - {b.perawat['nama']} & {s.perawat['nama']}")
                         else:
                             print("  Tidak ada pasangan baru-senior.")
+
+            simpan_jadwal_excel(jadwal_final)
+
 
         elif pilihan == '0':
             print("👋 Good Bye...\n")
